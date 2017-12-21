@@ -20,40 +20,41 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-package com.jcraft.jcterm;
+//package com.jcraft.jcterm;
+//
+//import com.jcraft.jsch.*;
+//import com.jcraft.jsch.agentproxy.*;
+//import com.jcraft.jsch.agentproxy.usocket.*;
+//import com.jcraft.jsch.agentproxy.connector.*;
+//import java.util.Vector;
+//
+//public class JCTermIdentityRepository extends RemoteIdentityRepository {
+//  private static Connector con;
+//
+//  static {
+//    try {
+//      if(System.getenv("SSH_AUTH_SOCK")!=null){
+//        USocketFactory usf = new JNAUSocketFactory();
+//        con = new SSHAgentConnector(usf);
+//      }
+//    }
+//    catch(AgentProxyException e){ System.err.println(e); }
+//
+//    try {
+//      if(System.getProperty("os.name").startsWith("Windows"))
+//        con = new PageantConnector();
+//    }
+//    catch(AgentProxyException e){ System.err.println(e); }
+//  }
+//
+//  public JCTermIdentityRepository() {
+//    super(con);
+//  }
+//
+//  public int getStatus() {
+//    if(con == null)
+//      return NOTRUNNING;
+//    return super.getStatus();
+//  }
+//}
 
-import com.jcraft.jsch.*;
-import com.jcraft.jsch.agentproxy.*;
-import com.jcraft.jsch.agentproxy.usocket.*;
-import com.jcraft.jsch.agentproxy.connector.*;
-import java.util.Vector;
-
-public class JCTermIdentityRepository extends RemoteIdentityRepository {
-  private static Connector con;
-
-  static {
-    try {
-      if(System.getenv("SSH_AUTH_SOCK")!=null){
-        USocketFactory usf = new JNAUSocketFactory();
-        con = new SSHAgentConnector(usf);
-      }
-    }
-    catch(AgentProxyException e){ System.err.println(e); }
-
-    try {
-      if(System.getProperty("os.name").startsWith("Windows"))
-        con = new PageantConnector();
-    }
-    catch(AgentProxyException e){ System.err.println(e); }
-  }
-
-  public JCTermIdentityRepository() {
-    super(con);
-  }
-
-  public int getStatus() {
-    if(con == null)
-      return NOTRUNNING;
-    return super.getStatus();
-  }
-}
