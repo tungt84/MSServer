@@ -99,7 +99,7 @@ public class JCTermSwing extends JPanel implements KeyListener, /*Runnable,*/
     //  setOpaque(true);
   }
 
-  void setFont(String fname){
+  public void setFont(String fname){
     font=java.awt.Font.decode(fname);
     BufferedImage img=new BufferedImage(1, 1, BufferedImage.TYPE_INT_RGB);
     Graphics2D graphics=(Graphics2D)(img.getGraphics());
@@ -442,7 +442,7 @@ public class JCTermSwing extends JPanel implements KeyListener, /*Runnable,*/
     this.compression=compression;
   }
 
-  static java.awt.Color toColor(Object o){
+  public static java.awt.Color toColor(Object o){
     if(o instanceof String){
       try{
         return java.awt.Color.decode(((String)o).trim());
@@ -489,7 +489,7 @@ public class JCTermSwing extends JPanel implements KeyListener, /*Runnable,*/
     return bground;
   }
 
-  void resetCursorGraphics(){
+  public void resetCursorGraphics(){
     if(cursor_graphics!=null)
       cursor_graphics.dispose();
 

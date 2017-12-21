@@ -22,7 +22,7 @@
 
 package com.jcraft.jcterm;
 
-interface Frame {
+public interface Frame {
   final int SHELL=0;
   final int SFTP=1;
   final int EXEC=2;
