@@ -136,7 +136,7 @@ public class JSchSession{
     sessionFactory=sf;
   }
 
-  static void useSSHAgent(boolean use){
+  public static void useSSHAgent(boolean use){
     IdentityRepository ir = null;
     if(use){
       try{
