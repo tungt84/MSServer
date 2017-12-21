@@ -130,9 +130,14 @@ public class SJCTermSwingFrame extends JFrame implements com.jcraft.jcterm.Frame
 	private String configName = "default";
 
 	private static SJCConfig config;
+	
+	private static IPasswordProvider passwordProvider;
+	public static void setPasswordProvider(IPasswordProvider passwordProvider) {
+		SJCTermSwingFrame.passwordProvider = passwordProvider;
+	}
 
-	public static void setConfig(SJCConfig config){
-		SJCTermSwingFrame.config =config;
+	public static void setConfig(SJCConfig config) {
+		SJCTermSwingFrame.config = config;
 	}
 
 	public boolean getCloseOnExit() {
@@ -153,6 +158,7 @@ public class SJCTermSwingFrame extends JFrame implements com.jcraft.jcterm.Frame
 	public SJCTermSwingFrame(String name, String configName) {
 		super(name);
 		this.configName = configName;
+	
 
 		setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 		enableEvents(AWTEvent.KEY_EVENT_MASK);
@@ -203,7 +209,7 @@ public class SJCTermSwingFrame extends JFrame implements com.jcraft.jcterm.Frame
 			try {
 				int port = 22;
 				try {
-					
+
 					String _host = config.getDestination();
 					destination = _host;
 					if (_host == null) {
@@ -228,7 +234,7 @@ public class SJCTermSwingFrame extends JFrame implements com.jcraft.jcterm.Frame
 				}
 
 				try {
-					UserInfo ui = new MyUserInfo();
+					UserInfo ui = new MyUserInfo(passwordProvider);
 
 					jschsession = JSchSession.getSession(user, null, host, port, ui, proxy);
 					setCompression(compression);
@@ -329,6 +335,11 @@ public class SJCTermSwingFrame extends JFrame implements com.jcraft.jcterm.Frame
 	}
 
 	public class MyUserInfo implements UserInfo, UIKeyboardInteractive {
+		private IPasswordProvider passwordProvider;
+		public MyUserInfo(IPasswordProvider passwordProvider){
+			this.passwordProvider = passwordProvider;
+		}
+		
 		public boolean promptYesNo(String str) {
 			Object[] options = { "yes", "no" };
 			int foo = JOptionPane.showOptionDialog(SJCTermSwingFrame.this.term, str, "Warning",
@@ -338,10 +349,10 @@ public class SJCTermSwingFrame extends JFrame implements com.jcraft.jcterm.Frame
 
 		String passwd = null;
 		String passphrase = null;
-		JTextField pword = new JPasswordField(20);
+
 
 		public String getPassword() {
-			return passwd;
+			return passwordProvider.getPassword();
 		}
 
 		public String getPassphrase() {
@@ -349,26 +360,7 @@ public class SJCTermSwingFrame extends JFrame implements com.jcraft.jcterm.Frame
 		}
 
 		public boolean promptPassword(String message) {
-			Object[] ob = { pword };
-			JPanel panel = new JPanel();
-			panel.add(pword);
-			pword.requestFocusInWindow();
-			JOptionPane pane = new JOptionPane(panel, JOptionPane.QUESTION_MESSAGE, JOptionPane.OK_CANCEL_OPTION) {
-				public void selectInitialValue() {
-				}
-			};
-
-			JDialog dialog = pane.createDialog(SJCTermSwingFrame.this.term, message);
-			dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
-			dialog.setVisible(true);
-			Object o = pane.getValue();
-
-			if (o != null && ((Integer) o).intValue() == JOptionPane.OK_OPTION) {
-				passwd = pword.getText();
-				return true;
-			} else {
-				return false;
-			}
+			return true;
 		}
 
 		public boolean promptPassphrase(String message) {
@@ -578,120 +570,9 @@ public class SJCTermSwingFrame extends JFrame implements com.jcraft.jcterm.Frame
 
 	public void actionPerformed(ActionEvent e) {
 		String action = e.getActionCommand();
-
-		int _mode = SHELL;
-		if (action.equals("Open SHELL Session...")) {
-			_mode = SHELL;
-		} else if (action.equals("Open SFTP Session...")) {
-			_mode = SFTP;
-		}
-
-		if (action.equals("Open SHELL Session...") || action.equals("Open SFTP Session...")) {
-			if (thread == null) {
-				mode = _mode;
-				openSession();
-			} else {
-				frame.openFrame(_mode, configName);
-			}
-		} else if (action.equals("HTTP...")) {
-			String foo = getProxyHttpHost();
-			int bar = getProxyHttpPort();
-			String proxy = JOptionPane.showInputDialog(this, "HTTP proxy server (hostname:port)",
-					((foo != null && bar != 0) ? foo + ":" + bar : ""));
-			if (proxy == null)
-				return;
-			if (proxy.length() == 0) {
-				setProxyHttp(null, 0);
-				return;
-			}
-
-			try {
-				foo = proxy.substring(0, proxy.indexOf(':'));
-				bar = Integer.parseInt(proxy.substring(proxy.indexOf(':') + 1));
-				if (foo != null) {
-					setProxyHttp(foo, bar);
-				}
-			} catch (Exception ee) {
-			}
-		} else if (action.equals("SOCKS5...")) {
-			String foo = getProxySOCKS5Host();
-			int bar = getProxySOCKS5Port();
-			String proxy = JOptionPane.showInputDialog(this, "SOCKS5 server (hostname:1080)",
-					((foo != null && bar != 0) ? foo + ":" + bar : ""));
-			if (proxy == null)
-				return;
-			if (proxy.length() == 0) {
-				setProxySOCKS5(null, 0);
-				return;
-			}
-
-			try {
-				foo = proxy.substring(0, proxy.indexOf(':'));
-				bar = Integer.parseInt(proxy.substring(proxy.indexOf(':') + 1));
-				if (foo != null) {
-					setProxySOCKS5(foo, bar);
-				}
-			} catch (Exception ee) {
-			}
-		} else if (action.equals("X11 Forwarding...")) {
-			String display = JOptionPane.showInputDialog(this, "XDisplay name (hostname:0)",
-					(xhost == null) ? "" : (xhost + ":" + xport));
-			try {
-				if (display != null) {
-					xhost = display.substring(0, display.indexOf(':'));
-					xport = Integer.parseInt(display.substring(display.indexOf(':') + 1));
-					xforwarding = true;
-				}
-			} catch (Exception ee) {
-				xforwarding = false;
-				xhost = null;
-			}
-		} else if ((action.equals("AntiAliasing"))) {
-			setAntiAliasing(!getAntiAliasing());
-		} else if (action.equals("Compression...")) {
-			String foo = JOptionPane.showInputDialog(this,
-					"Compression level(0-9)\n0 means no compression.\n1 means fast.\n9 means slow, but best.",
-					new Integer(compression).toString());
-			try {
-				if (foo != null) {
-					compression = Integer.parseInt(foo);
-					setCompression(compression);
-				}
-			} catch (Exception ee) {
-			}
-		} else if (action.equals("About...")) {
+		if (action.equals("About...")) {
 			JOptionPane.showMessageDialog(this, COPYRIGHT);
 			return;
-		} else if ((action.equals("Local Port...")) || (action.equals("Remote Port..."))) {
-			if (jschsession == null) {
-				JOptionPane.showMessageDialog(this, "Establish the connection before this setting.");
-				return;
-			}
-
-			try {
-				String title = "";
-				if (action.equals("Local Port...")) {
-					title += "Local port forwarding";
-				} else {
-					title += "remote port forwarding";
-				}
-				title += "(port:host:hostport)";
-
-				String foo = JOptionPane.showInputDialog(this, title, "");
-				if (foo == null)
-					return;
-				int port1 = Integer.parseInt(foo.substring(0, foo.indexOf(':')));
-				foo = foo.substring(foo.indexOf(':') + 1);
-				String host = foo.substring(0, foo.indexOf(':'));
-				int port2 = Integer.parseInt(foo.substring(foo.indexOf(':') + 1));
-
-				if (action.equals("Local Port...")) {
-					setPortForwardingL(port1, host, port2);
-				} else {
-					setPortForwardingR(port1, host, port2);
-				}
-			} catch (Exception ee) {
-			}
 		} else if (action.equals("Quit")) {
 			quit();
 		}
@@ -703,125 +584,10 @@ public class SJCTermSwingFrame extends JFrame implements com.jcraft.jcterm.Frame
 		JMenuItem mi;
 
 		m = new JMenu("File");
-		mi = new JMenuItem("Open SHELL Session...");
-		mi.addActionListener(this);
-		mi.setActionCommand("Open SHELL Session...");
-		m.add(mi);
-		mi = new JMenuItem("Open SFTP Session...");
-		mi.addActionListener(this);
-		mi.setActionCommand("Open SFTP Session...");
-		m.add(mi);
 		mi = new JMenuItem("Quit");
 		mi.addActionListener(this);
 		mi.setActionCommand("Quit");
 		m.add(mi);
-		mb.add(m);
-
-		m = new JMenu("Proxy");
-		mi = new JMenuItem("HTTP...");
-		mi.addActionListener(this);
-		mi.setActionCommand("HTTP...");
-		m.add(mi);
-		mi = new JMenuItem("SOCKS5...");
-		mi.addActionListener(this);
-		mi.setActionCommand("SOCKS5...");
-		m.add(mi);
-		mb.add(m);
-
-		m = new JMenu("PortForwarding");
-		mi = new JMenuItem("Local Port...");
-		mi.addActionListener(this);
-		mi.setActionCommand("Local Port...");
-		m.add(mi);
-		mi = new JMenuItem("Remote Port...");
-		mi.addActionListener(this);
-		mi.setActionCommand("Remote Port...");
-		m.add(mi);
-		mi = new JMenuItem("X11 Forwarding...");
-		mi.addActionListener(this);
-		mi.setActionCommand("X11 Forwarding...");
-		m.add(mi);
-		mb.add(m);
-
-		m = new JMenu("Etc");
-
-		mi = new JMenuItem("AntiAliasing");
-		mi.addActionListener(this);
-		mi.setActionCommand("AntiAliasing");
-		m.add(mi);
-
-		mi = new JMenuItem("Compression...");
-		mi.addActionListener(this);
-		mi.setActionCommand("Compression...");
-		m.add(mi);
-
-		JMenu mcolor = new JMenu("Color");
-		final ActionListener mcolor_action = new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				setFgBg(e.getActionCommand());
-			}
-		};
-		mcolor.addMenuListener(new MenuListener() {
-			public void menuSelected(MenuEvent me) {
-				JMenu jm = (JMenu) me.getSource();
-				String[] fg_bg = JCTermSwing.getCR().load(configName).fg_bg;
-				for (int i = 0; i < fg_bg.length; i++) {
-					String[] tmp = fg_bg[i].split(":");
-					JMenuItem mi = new JMenuItem("ABC");
-					mi.setForeground(JCTermSwing.toColor(tmp[0]));
-					mi.setBackground(JCTermSwing.toColor(tmp[1]));
-					mi.setActionCommand(fg_bg[i]);
-					mi.addActionListener(mcolor_action);
-					jm.add(mi);
-				}
-			}
-
-			public void menuDeselected(MenuEvent me) {
-				JMenu jm = (JMenu) me.getSource();
-				jm.removeAll();
-			}
-
-			public void menuCanceled(MenuEvent arg) {
-			}
-		});
-		m.add(mcolor);
-
-		JMenu mfsize = new JMenu("Font size");
-		final ActionListener mfsize_action = new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				String _font_size = e.getActionCommand();
-				try {
-					setFontSize(Integer.parseInt(_font_size));
-				} catch (NumberFormatException nfe) {
-				}
-			}
-		};
-		mfsize.addMenuListener(new MenuListener() {
-			public void menuSelected(MenuEvent me) {
-				JMenuItem mi;
-				JMenu jm = (JMenu) me.getSource();
-				int font_size = JCTermSwing.getCR().load(configName).font_size;
-				mi = new JMenuItem("Smaller (" + (font_size - 1) + ")");
-				;
-				mi.setActionCommand("" + (font_size - 1));
-				mi.addActionListener(mfsize_action);
-				jm.add(mi);
-				mi = new JMenuItem("Larger (" + (font_size + 1) + ")");
-				mi.setActionCommand("" + (font_size + 1));
-				mi.addActionListener(mfsize_action);
-				jm.add(mi);
-			}
-
-			public void menuDeselected(MenuEvent me) {
-				JMenu jm = (JMenu) me.getSource();
-				jm.removeAll();
-			}
-
-			public void menuCanceled(MenuEvent arg) {
-			}
-		});
-		m.add(mfsize);
-
 		mb.add(m);
 
 		m = new JMenu("Help");
@@ -840,9 +606,7 @@ public class SJCTermSwingFrame extends JFrame implements com.jcraft.jcterm.Frame
 			connection.close();
 			connection = null;
 		}
-		/*
-		 * if(jschsession!=null){ jschsession.dispose(); jschsession=null; }
-		 */
+		this.dispatchEvent(new WindowEvent(this, WindowEvent.WINDOW_CLOSING));
 	}
 
 	public void setTerm(JCTermSwing term) {
@@ -884,36 +648,6 @@ public class SJCTermSwingFrame extends JFrame implements com.jcraft.jcterm.Frame
 		term.redraw(0, 0, term.getWidth(), term.getHeight());
 	}
 
-	private String promptDestination(JComponent term, String[] destinations) {
-		JComboBox jb = new JComboBox();
-		jb.setEditable(true);
-
-		for (int i = 0; i < destinations.length; i++) {
-			jb.addItem(destinations[i]);
-		}
-
-		JPanel panel = new JPanel();
-		jb.requestFocusInWindow();
-		JOptionPane pane = new JOptionPane(jb, JOptionPane.QUESTION_MESSAGE, JOptionPane.OK_CANCEL_OPTION) {
-			public void selectInitialValue() {
-			}
-		};
-
-		JDialog dialog = pane.createDialog(SJCTermSwingFrame.this.term, "Enter username@hostname");
-		dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
-		dialog.setVisible(true);
-		Object o = pane.getValue();
-
-		String d = null;
-		if (o != null && ((Integer) o).intValue() == JOptionPane.OK_OPTION) {
-			d = (String) jb.getSelectedItem();
-		}
-		if (d == null || d.length() == 0)
-			return null;
-		else
-			return d;
-	}
-
 	void setFrame(Frame frame) {
 		this.frame = frame;
 	}
@@ -923,13 +657,33 @@ public class SJCTermSwingFrame extends JFrame implements com.jcraft.jcterm.Frame
 		Configuration conf = JCTermSwing.getCR().load(configName);
 		_setFontSize(conf.font_size);
 		_setFgBg(conf.fg_bg[0]);
+		if (config.isXforwarding()) {
+			setXForwarding(true);
+			setXHost(config.getXhost());
+			setXPort(config.getXport());
+		}
+		if (config.getProxy_http_port() > 0) {
+			setProxyHttp(config.getProxy_http_host(), config.getProxy_http_port());
+		}
+		if (config.getProxy_socks5_port() > 0) {
+			setProxySOCKS5(config.getProxy_socks5_host(), config.getProxy_socks5_port());
+		}
+		this.mode = config.getMode();
+
 	}
 
 	public static void main(String[] arg) {
 		JCTermSwing.setCR(new ConfigurationRepositoryFS());
 		SJCConfig config = new SJCConfig();
 		SJCTermSwingFrame.setConfig(config);
+		SJCTermSwingFrame.setPasswordProvider(new IPasswordProvider() {
+			public String getPassword() {
+				return "oraosb";
+			}
+		});
 		config.setDestination("oraosb@192.168.181.63");
+		config.setMode(SHELL);
+		config.setXforwarding(true);
 		String s = System.getProperty("jcterm.config.use_ssh_agent");
 		if (s != null && s.equals("true"))
 			JSchSession.useSSHAgent(true);
