@@ -307,7 +307,7 @@ public class SJCTermSwingFrame extends JFrame implements com.jcraft.jcterm.Frame
 				term.requestFocus();
 				term.start(connection);
 			} catch (Exception e) {
-				// e.printStackTrace();
+				e.printStackTrace();
 			}
 			break;
 		}
