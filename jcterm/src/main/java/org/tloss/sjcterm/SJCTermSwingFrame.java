@@ -129,6 +129,12 @@ public class SJCTermSwingFrame extends JFrame implements com.jcraft.jcterm.Frame
 
 	private String configName = "default";
 
+	private static SJCConfig config;
+
+	public static void setConfig(SJCConfig config){
+		SJCTermSwingFrame.config =config;
+	}
+
 	public boolean getCloseOnExit() {
 		return close_on_exit;
 	}
@@ -197,8 +203,8 @@ public class SJCTermSwingFrame extends JFrame implements com.jcraft.jcterm.Frame
 			try {
 				int port = 22;
 				try {
-					String[] destinations = JCTermSwing.getCR().load(configName).destinations;
-					String _host = promptDestination(term, destinations);
+					
+					String _host = config.getDestination();
 					destination = _host;
 					if (_host == null) {
 						break;
@@ -921,7 +927,9 @@ public class SJCTermSwingFrame extends JFrame implements com.jcraft.jcterm.Frame
 
 	public static void main(String[] arg) {
 		JCTermSwing.setCR(new ConfigurationRepositoryFS());
-
+		SJCConfig config = new SJCConfig();
+		SJCTermSwingFrame.setConfig(config);
+		config.setDestination("oraosb@192.168.181.63");
 		String s = System.getProperty("jcterm.config.use_ssh_agent");
 		if (s != null && s.equals("true"))
 			JSchSession.useSSHAgent(true);
