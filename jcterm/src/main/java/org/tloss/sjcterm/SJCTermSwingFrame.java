@@ -684,6 +684,7 @@ public class SJCTermSwingFrame extends JFrame implements com.jcraft.jcterm.Frame
 		config.setDestination("oraosb@192.168.181.63");
 		config.setMode(SHELL);
 		config.setXforwarding(true);
+		config.setXport(2);
 		String s = System.getProperty("jcterm.config.use_ssh_agent");
 		if (s != null && s.equals("true"))
 			JSchSession.useSSHAgent(true);
